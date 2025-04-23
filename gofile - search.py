@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-
 from os import chdir, getcwd, getenv, listdir, mkdir, path, rmdir
 from sys import exit, stdout, stderr
 from typing import Any, NoReturn, TextIO
@@ -49,7 +48,7 @@ def die(msg: str) -> NoReturn:
 # increase max_workers for parallel downloads
 # defaults to 5 download at time
 class Main:
-    def __init__(self, url: str, password: str | None = None, max_workers: int = 5) -> None:
+    def __init__(self, url: str, password: str | None = None, max_workers: int = 5, filter_keyword: str | None = None) -> None:
         root_dir: str | None = getenv("GF_DOWNLOADDIR")
 
         if root_dir and path.exists(root_dir):
@@ -60,6 +59,7 @@ class Main:
         token: str | None = getenv("GF_TOKEN")
         self._message: str = " "
         self._content_dir: str | None = None
+        self._filter_keyword: str | None = filter_keyword
 
         # Dictionary to hold information about file and its directories structure
         # {"index": {"path": "", "filename": "", "link": ""}}
@@ -308,6 +308,11 @@ class Main:
         if data["type"] != "folder":
             current_dir: str = getcwd()
             filename: str = data["name"]
+
+            # Apply filter keyword if specified
+            if self._filter_keyword and self._filter_keyword.lower() not in filename.lower():
+                return  # skip this file if it doesn't match the filter
+            
             recursive_files_index["index"] += 1
             filepath: str = path.join(current_dir, filename)
 

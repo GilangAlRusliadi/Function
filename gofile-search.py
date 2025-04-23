@@ -44,7 +44,7 @@ def die(msg: str) -> NoReturn:
 # increase max_workers for parallel downloads
 # defaults to 5 download at time
 class Main:
-    def __init__(self, url: str, password: str | None = None, max_workers: int = 5, filter_keyword: str | None = None) -> None:
+    def __init__(self, url: str, filter_keyword: str | None = None, password: str | None = None, max_workers: int = 5) -> None:
         root_dir: str | None = getenv("GF_DOWNLOADDIR")
 
         if root_dir and path.exists(root_dir):
@@ -65,7 +65,7 @@ class Main:
         self._root_dir: str = root_dir if root_dir else getcwd()
         self._token: str = token if token else self._get_token()
 
-        self._parse_url_or_file(url, password)
+        self._parse_url_or_file(url, filter_keyword, password)
 
     def _threaded_downloads(self) -> None:
         """
@@ -409,17 +409,18 @@ class Main:
                    f"{NEW_LINE}"
             )
 
-
-    def _download(self, url: str, password: str | None = None) -> None:
+    def _download(self, url: str, filter_keyword: str | None = None, password: str | None = None) -> None:
         """
         _download
 
         Requests to start downloading files.
 
         :param url: url of the content.
+        :param filter_keyword: keyword to filter files by filename.
         :param password: content's password.
         :return:
         """
+        self._filter_keyword: str | None = filter_keyword
 
         try:
             if not url.split("/")[-2] == "d":
@@ -471,17 +472,30 @@ class Main:
             for key in keys_to_delete:
                 del self._files_info[key]
 
+        if self._filter_keyword:
+            keyword_lower = self._filter_keyword.lower()
+            self._files_info = {
+                k: v for k, v in self._files_info.items()
+                if keyword_lower in v["name"].lower()
+            }
+
+            if not self._files_info:
+                _print(f"No files matched filter keyword '{self._filter_keyword}'.{NEW_LINE}")
+                rmdir(self._content_dir)
+                self._reset_class_properties()
+                return
+
         self._threaded_downloads()
         self._reset_class_properties()
 
-
-    def _parse_url_or_file(self, url_or_file: str, _password: str | None = None) -> None:
+    def _parse_url_or_file(self, url_or_file: str, filter_keyword: str | None = None, _password: str | None = None) -> None:
         """
         _parse_url_or_file
 
         Parses a file or a url for possible links.
 
         :param url_or_file: a filename with urls to be downloaded or a single url.
+        :param filter_keyword: keyword to filter files by filename.
         :param password: password to be used across all links, if not provided a per link password may be used.
         :return:
         """
@@ -499,8 +513,7 @@ class Main:
             password: str | None = _password if _password else line_splitted[1].strip() \
                 if len(line_splitted) > 1 else _password
 
-            self._download(url, password)
-
+            self._download(url, filter_keyword, password)
 
     def _reset_class_properties(self) -> None:
         """
@@ -522,23 +535,29 @@ if __name__ == "__main__":
 
         url: str | None = None
         password: str | None = None
+        filter_keyword: str | None = None
         argc: int = len(argv)
 
         if argc > 1:
             url = argv[1]
 
             if argc > 2:
-                password = argv[2]
+                filter_keyword = argv[2]
+
+            if argc > 3:
+                password= argv[3]
 
             # Run
             _print(f"Starting, please wait...{NEW_LINE}")
-            Main(url=url, password=password)
+            Main(url=url, filter_keyword=filter_keyword, password=password)
         else:
             die(f"Usage:"
                 f"{NEW_LINE}"
                 f"python gofile-downloader.py https://gofile.io/d/contentid"
                 f"{NEW_LINE}"
-                f"python gofile-downloader.py https://gofile.io/d/contentid password"
+                f"python gofile-downloader.py https://gofile.io/d/contentid <filter_keyword>"
+                f"{NEW_LINE}"
+                f"python gofile-downloader.py https://gofile.io/d/contentid <password>"
             )
     except KeyboardInterrupt:
         exit(1)

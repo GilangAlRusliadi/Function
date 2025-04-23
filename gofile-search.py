@@ -11,9 +11,7 @@ from hashlib import sha256
 from shutil import move
 from time import perf_counter
 
-
 NEW_LINE: str = "\n" if system() != "Windows" else "\r\n"
-
 
 def _print(msg: str, error: bool = False) -> None:
     """
@@ -30,7 +28,6 @@ def _print(msg: str, error: bool = False) -> None:
     output.write(msg)
     output.flush()
 
-
 def die(msg: str) -> NoReturn:
     """
     die
@@ -43,7 +40,6 @@ def die(msg: str) -> NoReturn:
 
     _print(f"{msg}{NEW_LINE}", True)
     exit(-1)
-
 
 # increase max_workers for parallel downloads
 # defaults to 5 download at time
@@ -71,7 +67,6 @@ class Main:
 
         self._parse_url_or_file(url, password)
 
-
     def _threaded_downloads(self) -> None:
         """
         _threaded_downloads
@@ -93,7 +88,6 @@ class Main:
 
         chdir(self._root_dir)
 
-
     def _create_dir(self, dirname: str) -> None:
         """
         _create_dir
@@ -109,7 +103,6 @@ class Main:
         # if the directory already exist is safe to do nothing
         except FileExistsError:
             pass
-
 
     @staticmethod
     def _get_token() -> str:
@@ -135,7 +128,6 @@ class Main:
             die("Account creation failed!")
 
         return create_account_response["data"]["token"]
-
 
     def _download_content(self, file_info: dict[str, str], chunk_size: int = 16384) -> None:
         """
@@ -255,7 +247,6 @@ class Main:
                     )
                     move(tmp_file, filepath)
 
-
     def _parse_links_recursively(
         self,
         content_id: str,
@@ -312,7 +303,7 @@ class Main:
             # Apply filter keyword if specified
             if self._filter_keyword and self._filter_keyword.lower() not in filename.lower():
                 return  # skip this file if it doesn't match the filter
-            
+
             recursive_files_index["index"] += 1
             filepath: str = path.join(current_dir, filename)
 
@@ -391,7 +382,6 @@ class Main:
                 }
 
         chdir(path.pardir)
-
 
     def _print_list_files(self) -> None:
         """
@@ -526,7 +516,6 @@ class Main:
         self._content_dir: str | None = None
         self._files_info.clear()
 
-
 if __name__ == "__main__":
     try:
         from sys import argv
@@ -553,4 +542,3 @@ if __name__ == "__main__":
             )
     except KeyboardInterrupt:
         exit(1)
-
